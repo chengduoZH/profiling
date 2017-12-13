@@ -81,9 +81,13 @@ def main():
                                         fetch_list=[cost, acc_out])
             pass_acc = accuracy.eval(exe)
             iterator += 1
-            if iterator % 10 == 0:
+            if iterator % 100 == 0:
                 print("pass_id="+str(pass_id) + "  batch_id="+str(iterator) + " cost=" + str(cost_val) + " acc=" + str(acc_val) +
                   " pass_acc=" + str(pass_acc))
+            else:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+
             #if cost_val < 1.0 and pass_acc > 0.8:
             #    exit(0)
         print("pass_id=" + str(pass_id) + "  time consume:" + str(time.time() - pass_start_time))

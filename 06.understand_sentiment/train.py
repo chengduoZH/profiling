@@ -146,7 +146,7 @@ if __name__ == '__main__':
     def event_handler(event):
         global start_time
         if isinstance(event, paddle.event.EndIteration):
-            if event.batch_id % 10 == 0:
+            if event.batch_id % 100 == 0:
                 print "\nPass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
             else:
