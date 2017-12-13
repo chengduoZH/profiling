@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 import paddle.v2 as paddle
+import time
 
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
@@ -79,22 +80,26 @@ def main():
 
     lists = []
 
+    pass_time = time.time()
+
     def event_handler(event):
         if isinstance(event, paddle.event.EndIteration):
-            if event.batch_id % 100 == 0:
+            if event.batch_id % 10 == 0:
                 print "Pass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
         if isinstance(event, paddle.event.EndPass):
+            print("pass time consume :" str(time.time() - pass_time))
+            pass_time = time.time()
             # save parameters
-            with open('params_pass_%d.tar' % event.pass_id, 'w') as f:
-                trainer.save_parameter_to_tar(f)
+            #with open('params_pass_%d.tar' % event.pass_id, 'w') as f:
+            #    trainer.save_parameter_to_tar(f)
 
-            result = trainer.test(reader=paddle.batch(
-                paddle.dataset.mnist.test(), batch_size=128))
-            print "Test with Pass %d, Cost %f, %s\n" % (
-                event.pass_id, result.cost, result.metrics)
-            lists.append((event.pass_id, result.cost,
-                          result.metrics['classification_error_evaluator']))
+            #result = trainer.test(reader=paddle.batch(
+            #    paddle.dataset.mnist.test(), batch_size=128))
+            #print "Test with Pass %d, Cost %f, %s\n" % (
+            #    event.pass_id, result.cost, result.metrics)
+            #lists.append((event.pass_id, result.cost,
+            #              result.metrics['classification_error_evaluator']))
 
     trainer.train(
         reader=paddle.batch(
