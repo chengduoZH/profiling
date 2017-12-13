@@ -30,7 +30,7 @@ optimizer.minimize(avg_cost)
 accuracy = fluid.evaluator.Accuracy(input=predict, label=label)
 
 BATCH_SIZE = 128
-PASS_NUM = 5
+PASS_NUM = 10
 train_reader = paddle.batch(
     paddle.reader.shuffle(
         paddle.dataset.mnist.train(), buf_size=8192),

@@ -8,7 +8,6 @@ pass_time = 0
 
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
-
 def softmax_regression(img):
     predict = paddle.layer.fc(
         input=img, size=10, act=paddle.activation.Softmax())
@@ -81,7 +80,6 @@ def main():
         cost=cost, parameters=parameters, update_equation=optimizer)
 
     lists = []
-
     pass_time = time.time()
 
     def event_handler(event):
@@ -109,28 +107,7 @@ def main():
             paddle.reader.shuffle(paddle.dataset.mnist.train(), buf_size=8192),
             batch_size=128),
         event_handler=event_handler,
-        num_passes=5)
-
-    # find the best pass
-    best = sorted(lists, key=lambda list: float(list[1]))[0]
-    print 'Best pass is %s, testing Avgcost is %s' % (best[0], best[1])
-    print 'The classification accuracy is %.2f%%' % (100 - float(best[2]) * 100)
-
-    def load_image(file):
-        im = Image.open(file).convert('L')
-        im = im.resize((28, 28), Image.ANTIALIAS)
-        im = np.array(im).astype(np.float32).flatten()
-        im = im / 255.0 * 2.0 - 1.0
-        return im
-
-    test_data = []
-    cur_dir = os.path.dirname(os.path.realpath(__file__))
-    test_data.append((load_image(cur_dir + '/image/infer_3.png'), ))
-
-    probs = paddle.infer(
-        output_layer=predict, parameters=parameters, input=test_data)
-    lab = np.argsort(-probs)  # probs and lab are the results of one batch data
-    print "Label of image/infer_3.png is: %d" % lab[0][0]
+        num_passes=10)
 
 
 if __name__ == '__main__':
