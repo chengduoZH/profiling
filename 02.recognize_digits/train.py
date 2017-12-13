@@ -4,6 +4,8 @@ import numpy as np
 import paddle.v2 as paddle
 import time
 
+pass_time = 0
+
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
 
@@ -83,7 +85,6 @@ def main():
     pass_time = time.time()
 
     def event_handler(event):
-
         if isinstance(event, paddle.event.EndIteration):
             if event.batch_id % 100 == 0:
                 print "Pass %d, Batch %d, Cost %f, %s" % (
