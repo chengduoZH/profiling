@@ -51,7 +51,7 @@ for pass_id in range(PASS_NUM):
                             fetch_list=[avg_cost] + accuracy.metrics)
         pass_acc = accuracy.eval(exe)
         iterator += 1
-        if iterator % 10 == 0:
+        if iterator % 100 == 0:
             print("pass_id=" + str(pass_id) +" batch_id="+str(iterator) + " acc=" + str(acc) + " pass_acc=" +
               str(pass_acc))
         # print loss, acc

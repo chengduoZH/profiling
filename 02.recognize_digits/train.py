@@ -83,12 +83,14 @@ def main():
     pass_time = time.time()
 
     def event_handler(event):
+
         if isinstance(event, paddle.event.EndIteration):
-            if event.batch_id % 10 == 0:
+            if event.batch_id % 100 == 0:
                 print "Pass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
         if isinstance(event, paddle.event.EndPass):
-            print("pass time consume :" str(time.time() - pass_time))
+            global pass_time
+            print("pass time consume :" + str(time.time() - pass_time))
             pass_time = time.time()
             # save parameters
             #with open('params_pass_%d.tar' % event.pass_id, 'w') as f:
