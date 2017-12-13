@@ -2,10 +2,12 @@ from __future__ import print_function
 import numpy as np
 import paddle.v2 as paddle
 import paddle.v2.fluid as fluid
+import time
 
+start_time = time.time()
 
-def convolution_net(data, label, input_dim, class_dim=2, emb_dim=32,
-                    hid_dim=32):
+def convolution_net(data, label, input_dim, class_dim=2, emb_dim=128,
+                    hid_dim=128):
     emb = fluid.layers.embedding(input=data, size=[input_dim, emb_dim])
     conv_3 = fluid.nets.sequence_conv_pool(
         input=emb,
@@ -47,8 +49,8 @@ def to_lodtensor(data, place):
 
 def main():
     BATCH_SIZE = 100
-    PASS_NUM = 5
-
+    PASS_NUM = 20
+    global start_time
     word_dict = paddle.dataset.imdb.word_dict()
     dict_dim = len(word_dict)
     class_dim = 2
@@ -61,26 +63,32 @@ def main():
 
     train_data = paddle.batch(
         paddle.reader.shuffle(
-            paddle.dataset.imdb.train(word_dict), buf_size=1000),
+            paddle.dataset.imdb.train(word_dict), buf_size=BATCH_SIZE*10),
         batch_size=BATCH_SIZE)
     place = fluid.CPUPlace()
     exe = fluid.Executor(place)
     feeder = fluid.DataFeeder(feed_list=[data, label], place=place)
 
     exe.run(fluid.default_startup_program())
-
+    
     for pass_id in xrange(PASS_NUM):
         accuracy.reset(exe)
+        iterator = 0
+        pass_start_time = time.time()
         for data in train_data():
             cost_val, acc_val = exe.run(fluid.default_main_program(),
                                         feed=feeder.feed(data),
                                         fetch_list=[cost, acc_out])
             pass_acc = accuracy.eval(exe)
-            print("cost=" + str(cost_val) + " acc=" + str(acc_val) +
+            iterator += 1
+            if iterator % 10 == 0:
+                print("pass_id="+str(pass_id) + "  batch_id="+str(iterator) + " cost=" + str(cost_val) + " acc=" + str(acc_val) +
                   " pass_acc=" + str(pass_acc))
-            if cost_val < 1.0 and pass_acc > 0.8:
-                exit(0)
-    exit(1)
+            #if cost_val < 1.0 and pass_acc > 0.8:
+            #    exit(0)
+        print("pass_id=" + str(pass_id) + "  time consume:" + str(time.time() - pass_start_time))
+    print("total time consume : " + str(time.time() - start_time))
+    #exit(1)
 
 
 if __name__ == '__main__':

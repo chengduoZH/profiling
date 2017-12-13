@@ -14,6 +14,9 @@
 
 import sys, os
 import paddle.v2 as paddle
+import time
+
+start_time = 0
 
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
@@ -99,7 +102,7 @@ def stacked_lstm_net(input_dim,
 if __name__ == '__main__':
     # init
     paddle.init(use_gpu=with_gpu)
-
+    
     #data
     print 'load dictionary...'
     word_dict = paddle.dataset.imdb.word_dict()
@@ -133,26 +136,30 @@ if __name__ == '__main__':
     trainer = paddle.trainer.SGD(
         cost=cost, parameters=parameters, update_equation=adam_optimizer)
 
+    # Save the inference topology to protobuf.
+    inference_topology = paddle.topology.Topology(layers=output)
+    with open("./inference_topology.pkl", 'wb') as f:
+        inference_topology.serialize_for_inference(f)
+    
+    start_time = time.time()
     # End batch and end pass event handler
     def event_handler(event):
+        global start_time
         if isinstance(event, paddle.event.EndIteration):
-            if event.batch_id % 100 == 0:
+            if event.batch_id % 10 == 0:
                 print "\nPass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
         if isinstance(event, paddle.event.EndPass):
-            with open('./params_pass_%d.tar' % event.pass_id, 'w') as f:
-                trainer.save_parameter_to_tar(f)
+            print("time consume : " + str(time.time() - start_time))
+            start_time = time.time()
+            #with open('./params_pass_%d.tar' % event.pass_id, 'w') as f:
+            #    trainer.save_parameter_to_tar(f)
 
-            result = trainer.test(reader=test_reader, feeding=feeding)
-            print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
-
-    # Save the inference topology to protobuf.
-    inference_topology = paddle.topology.Topology(layers=output)
-    with open("./inference_topology.pkl", 'wb') as f:
-        inference_topology.serialize_for_inference(f)
+            #result = trainer.test(reader=test_reader, feeding=feeding)
+            #print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     trainer.train(
         reader=train_reader,
