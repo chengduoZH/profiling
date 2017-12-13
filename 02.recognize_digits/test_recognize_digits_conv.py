@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 import paddle.v2 as paddle
 import paddle.v2.fluid as fluid
+import time
 
 images = fluid.layers.data(name='pixel', shape=[1, 28, 28], dtype='float32')
 label = fluid.layers.data(name='label', shape=[1], dtype='int64')
@@ -28,11 +29,11 @@ optimizer.minimize(avg_cost)
 
 accuracy = fluid.evaluator.Accuracy(input=predict, label=label)
 
-BATCH_SIZE = 50
-PASS_NUM = 3
+BATCH_SIZE = 128
+PASS_NUM = 10
 train_reader = paddle.batch(
     paddle.reader.shuffle(
-        paddle.dataset.mnist.train(), buf_size=500),
+        paddle.dataset.mnist.train(), buf_size=8192),
     batch_size=BATCH_SIZE)
 
 place = fluid.CPUPlace()
@@ -42,19 +43,23 @@ exe.run(fluid.default_startup_program())
 
 for pass_id in range(PASS_NUM):
     accuracy.reset(exe)
+    pass_start_time = time.time()
+    iterator = 0
     for data in train_reader():
         loss, acc = exe.run(fluid.default_main_program(),
                             feed=feeder.feed(data),
                             fetch_list=[avg_cost] + accuracy.metrics)
         pass_acc = accuracy.eval(exe)
-        print("pass_id=" + str(pass_id) + " acc=" + str(acc) + " pass_acc=" +
+        iterator += 1
+        if iterator % 100 == 0:
+            print("pass_id=" + str(pass_id) +" batch_id="+str(iterator) + " acc=" + str(acc) + " pass_acc=" +
               str(pass_acc))
         # print loss, acc
-        if loss < 10.0 and pass_acc > 0.9:
+        #if loss < 10.0 and pass_acc > 0.9:
             # if avg cost less than 10.0 and accuracy is larger than 0.9, we think our code is good.
-            exit(0)
-
+        #    exit(0)
+    print("pass time consume : "+ str(time.time() - pass_start_time))    
     pass_acc = accuracy.eval(exe)
     print("pass_id=" + str(pass_id) + " pass_acc=" + str(pass_acc))
 
-exit(1)
+#exit(1)
