@@ -120,8 +120,8 @@ if __name__ == '__main__':
     # network config
     # Please choose the way to build the network
     # by uncommenting the corresponding line.
-    [cost, output] = convolution_net(dict_dim, class_dim=class_dim)
-    # [cost, output] = stacked_lstm_net(dict_dim, class_dim=class_dim, stacked_num=3)
+    # [cost, output] = convolution_net(dict_dim, class_dim=class_dim)
+    [cost, output] = stacked_lstm_net(dict_dim, class_dim=class_dim, stacked_num=3)
 
     # create parameters
     parameters = paddle.parameters.create(cost)

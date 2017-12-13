@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 import paddle.v2 as paddle
 import paddle.v2.fluid as fluid
@@ -7,26 +6,36 @@ import sys, os
 
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
-start_time = time.time()
+def stacked_lstm_net(data,
+                     label,
+                     input_dim,
+                     class_dim=2,
+                     emb_dim=128,
+                     hid_dim=512,
+                     stacked_num=3):
+    assert stacked_num % 2 == 1
 
-def convolution_net(data, label, input_dim, class_dim=2, emb_dim=128,
-                    hid_dim=128):
     emb = fluid.layers.embedding(input=data, size=[input_dim, emb_dim])
-    conv_3 = fluid.nets.sequence_conv_pool(
-        input=emb,
-        num_filters=hid_dim,
-        filter_size=3,
-        act="tanh",
-        pool_type="sqrt")
-    conv_4 = fluid.nets.sequence_conv_pool(
-        input=emb,
-        num_filters=hid_dim,
-        filter_size=4,
-        act="tanh",
-        pool_type="sqrt")
-    prediction = fluid.layers.fc(input=[conv_3, conv_4],
+    # add bias attr
+
+    # TODO(qijun) linear act
+    fc1 = fluid.layers.fc(input=emb, size=hid_dim)
+    lstm1, cell1 = fluid.layers.dynamic_lstm(input=fc1, size=hid_dim)
+
+    inputs = [fc1, lstm1]
+
+    for i in range(2, stacked_num + 1):
+        fc = fluid.layers.fc(input=inputs, size=hid_dim)
+        lstm, cell = fluid.layers.dynamic_lstm(
+            input=fc, size=hid_dim, is_reverse=(i % 2) == 0)
+        inputs = [fc, lstm]
+
+    fc_last = fluid.layers.sequence_pool(input=inputs[0], pool_type='max')
+    lstm_last = fluid.layers.sequence_pool(input=inputs[1], pool_type='max')
+
+    prediction = fluid.layers.fc(input=[fc_last, lstm_last],
                                  size=class_dim,
-                                 act="softmax")
+                                 act='softmax')
     cost = fluid.layers.cross_entropy(input=prediction, label=label)
     avg_cost = fluid.layers.mean(x=cost)
     adam_optimizer = fluid.optimizer.Adam(learning_rate=0.002)
@@ -53,32 +62,32 @@ def to_lodtensor(data, place):
 def main():
     BATCH_SIZE = 100
     PASS_NUM = 20
-    global start_time
+
     word_dict = paddle.dataset.imdb.word_dict()
+    print "load word dict successfully"
     dict_dim = len(word_dict)
     class_dim = 2
 
     data = fluid.layers.data(
         name="words", shape=[1], dtype="int64", lod_level=1)
     label = fluid.layers.data(name="label", shape=[1], dtype="int64")
-    cost, accuracy, acc_out = convolution_net(
+    cost, accuracy, acc_out = stacked_lstm_net(
         data, label, input_dim=dict_dim, class_dim=class_dim)
 
     train_data = paddle.batch(
         paddle.reader.shuffle(
-            paddle.dataset.imdb.train(word_dict), buf_size=BATCH_SIZE*10),
+            paddle.dataset.imdb.train(word_dict), buf_size=1000),
         batch_size=BATCH_SIZE)
-
     place = fluid.GPUPlace(0) if with_gpu else fluid.CPUPlace()
     exe = fluid.Executor(place)
     feeder = fluid.DataFeeder(feed_list=[data, label], place=place)
 
     exe.run(fluid.default_startup_program())
-    
+
     for pass_id in xrange(PASS_NUM):
         accuracy.reset(exe)
+        pass_time = time.time()
         iterator = 0
-        pass_start_time = time.time()
         for data in train_data():
             cost_val, acc_val = exe.run(fluid.default_main_program(),
                                         feed=feeder.feed(data),
@@ -86,15 +95,9 @@ def main():
             pass_acc = accuracy.eval(exe)
             iterator += 1
             if iterator % 100 == 0:
-                print("pass_id="+str(pass_id) + "  batch_id="+str(iterator) + " cost=" + str(cost_val) + " acc=" + str(acc_val) +
-                  " pass_acc=" + str(pass_acc))
-
-            #if cost_val < 1.0 and pass_acc > 0.8:
-            #    exit(0)
-        print("pass_id=" + str(pass_id) + "  time consume:" + str(time.time() - pass_start_time))
-    print("total time consume : " + str(time.time() - start_time))
-    #exit(1)
-
+                print("cost=" + str(cost_val) + " acc=" + str(acc_val) +
+                      " pass_acc=" + str(pass_acc))
+        print ("time consume : " + str(time.time() - pass_time))
 
 if __name__ == '__main__':
     main()
