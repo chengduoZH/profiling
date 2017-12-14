@@ -4,7 +4,7 @@ import numpy as np
 import paddle.v2 as paddle
 import time
 
-pass_time = 0
+#pass_time = 0
 
 with_gpu = os.getenv('WITH_GPU', '0') != '0'
 
@@ -80,17 +80,19 @@ def main():
         cost=cost, parameters=parameters, update_equation=optimizer)
 
     lists = []
-    pass_time = time.time()
-
+    class Namespace: pass
+    ns = Namespace()
+    ns.pass_time = time.time()
+   
     def event_handler(event):
         if isinstance(event, paddle.event.EndIteration):
+            print("as")
             if event.batch_id % 100 == 0:
                 print "Pass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
         if isinstance(event, paddle.event.EndPass):
-            global pass_time
-            print("pass time consume :" + str(time.time() - pass_time))
-            pass_time = time.time()
+            print("pass time consume :" + str(time.time() - ns.pass_time))
+            ns.pass_time = time.time()
             # save parameters
             #with open('params_pass_%d.tar' % event.pass_id, 'w') as f:
             #    trainer.save_parameter_to_tar(f)

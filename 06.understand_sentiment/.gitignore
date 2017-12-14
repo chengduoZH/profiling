@@ -8,3 +8,4 @@ dataprovider_copy_1.py
 model.list
 *.pyc
 .DS_Store
+*prof*
