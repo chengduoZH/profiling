@@ -4,3 +4,4 @@ data/test.list
 *.log
 *.pyc
 plot.png
+*py_prof*
