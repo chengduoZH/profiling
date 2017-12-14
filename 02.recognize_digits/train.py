@@ -86,7 +86,6 @@ def main():
    
     def event_handler(event):
         if isinstance(event, paddle.event.EndIteration):
-            print("as")
             if event.batch_id % 100 == 0:
                 print "Pass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
