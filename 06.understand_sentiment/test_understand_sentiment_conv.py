@@ -15,15 +15,15 @@ def convolution_net(data, label, input_dim, class_dim=2, emb_dim=128,
     conv_3 = fluid.nets.sequence_conv_pool(
         input=emb,
         num_filters=hid_dim,
-        filter_size=3,
-        act="tanh",
-        pool_type="sqrt")
+        filter_size=3)
+        #act="tanh",
+        #pool_type="sqrt")
     conv_4 = fluid.nets.sequence_conv_pool(
         input=emb,
         num_filters=hid_dim,
-        filter_size=4,
-        act="tanh",
-        pool_type="sqrt")
+        filter_size=4)
+        #act="tanh",
+        #pool_type="sqrt")
     prediction = fluid.layers.fc(input=[conv_3, conv_4],
                                  size=class_dim,
                                  act="softmax")
