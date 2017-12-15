@@ -52,7 +52,7 @@ def to_lodtensor(data, place):
 
 def main():
     BATCH_SIZE = 100
-    PASS_NUM = 20
+    PASS_NUM = 10
     global start_time
     word_dict = paddle.dataset.imdb.word_dict()
     dict_dim = len(word_dict)
@@ -84,16 +84,12 @@ def main():
                                         feed=feeder.feed(data),
                                         fetch_list=[cost, acc_out])
             pass_acc = accuracy.eval(exe)
-            iterator += 1
+            
             if iterator % 100 == 0:
                 print("pass_id="+str(pass_id) + "  batch_id="+str(iterator) + " cost=" + str(cost_val) + " acc=" + str(acc_val) +
                   " pass_acc=" + str(pass_acc))
-
-            #if cost_val < 1.0 and pass_acc > 0.8:
-            #    exit(0)
+            iterator += 1
         print("pass_id=" + str(pass_id) + "  time consume:" + str(time.time() - pass_start_time))
-    print("total time consume : " + str(time.time() - start_time))
-    #exit(1)
 
 
 if __name__ == '__main__':

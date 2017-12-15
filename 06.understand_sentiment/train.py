@@ -112,8 +112,6 @@ if __name__ == '__main__':
         paddle.reader.shuffle(
             paddle.dataset.imdb.train(word_dict), buf_size=1000),
         batch_size=100)
-    test_reader = paddle.batch(
-        paddle.dataset.imdb.test(word_dict), batch_size=100)
 
     feeding = {'word': 0, 'label': 1}
 
@@ -128,9 +126,9 @@ if __name__ == '__main__':
 
     # create optimizer
     adam_optimizer = paddle.optimizer.Adam(
-        learning_rate=2e-3,
-        regularization=paddle.optimizer.L2Regularization(rate=8e-4),
-        model_average=paddle.optimizer.ModelAverage(average_window=0.5))
+        learning_rate=0.002)
+        #regularization=paddle.optimizer.L2Regularization(rate=8e-4),
+        #model_average=paddle.optimizer.ModelAverage(average_window=0.5))
 
     # create trainer
     trainer = paddle.trainer.SGD(
@@ -146,7 +144,7 @@ if __name__ == '__main__':
     def event_handler(event):
         global start_time
         if isinstance(event, paddle.event.EndIteration):
-            if event.batch_id % 10 == 0:
+            if event.batch_id % 100 == 0:
                 print "\nPass %d, Batch %d, Cost %f, %s" % (
                     event.pass_id, event.batch_id, event.cost, event.metrics)
             #else:
@@ -155,14 +153,10 @@ if __name__ == '__main__':
         if isinstance(event, paddle.event.EndPass):
             print("time consume : " + str(time.time() - start_time))
             start_time = time.time()
-            #with open('./params_pass_%d.tar' % event.pass_id, 'w') as f:
-            #    trainer.save_parameter_to_tar(f)
 
-            #result = trainer.test(reader=test_reader, feeding=feeding)
-            #print "\nTest with Pass %d, %s" % (event.pass_id, result.metrics)
 
     trainer.train(
         reader=train_reader,
         event_handler=event_handler,
         feeding=feeding,
-        num_passes=20)
+        num_passes=10)
