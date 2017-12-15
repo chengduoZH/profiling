@@ -73,8 +73,8 @@ def main():
 
     optimizer = paddle.optimizer.Momentum(
         learning_rate=0.1 / 128.0,
-        momentum=0.9,
-        regularization=paddle.optimizer.L2Regularization(rate=0.0005 * 128))
+        momentum=0.9)
+        #regularization=paddle.optimizer.L2Regularization(rate=0.0005 * 128))
 
     trainer = paddle.trainer.SGD(
         cost=cost, parameters=parameters, update_equation=optimizer)
